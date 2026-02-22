@@ -118,6 +118,10 @@ exvs2ib-replay-parser/
 
 ## バージョン情報
 
+### v1.1.0
+
+- GitHub Actions ワークフロー失敗時に vsmobile-kgy API へ通知する機能を追加
+
 ### v1.0.0
 
 - タイムスタンプ抽出をメイン機能として整理（`--with-ocr` なしがデフォルト）
