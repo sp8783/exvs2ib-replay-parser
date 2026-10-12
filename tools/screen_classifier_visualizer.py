@@ -38,8 +38,8 @@ def main():
 
     for img_path in img_paths:
         img = cv2.imread(img_path)
-        screen_type = classifier.classify(img)
-        print(f"{img_path}: {screen_type}")
+        screen_type, vs_score = classifier.classify(img)
+        print(f"{img_path}: {screen_type} (VS: {vs_score:.3f})")
 
         rois = get_logo_rois(img, config)
         preview = img.copy()
