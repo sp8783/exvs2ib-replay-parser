@@ -144,6 +144,12 @@ exvs2ib-replay-parser/
 
 ## バージョン情報
 
+### v1.2.0
+
+- VS 画面の判定を作り直し、試合数が実際より多く検出される問題を修正（実際の VS 画面から作った見本で、ロゴの形の部分だけを比べる）
+- 精度を確かめるツール（`tools/evaluate_timestamps.py`）と、VS 画面の見本を作り直すツール（`tools/build_vs_template.py`）を追加
+- 画面判定のキャッシュの形式を変更（前のバージョンのキャッシュは使わず、判定し直す）
+
 ### v1.1.0
 
 - GitHub Actions ワークフロー失敗時に vsmobile-kgy API へ通知する機能を追加
