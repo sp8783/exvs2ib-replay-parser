@@ -22,33 +22,16 @@ class MatchExtractor:
         """
         return calculate_timestamp(frame_name, self.frame_interval)
 
-    def extract_match_results(self, screens: list[dict], match_count: int) -> list[dict]:
+    def extract_match_results(self, matches: list[dict]) -> list[dict]:
         """
-        マッチング画面→リザルト画面のペアごとにOCRを実行し、
+        検出した試合（VS 画面のコマとリザルト画面）ごとにOCRを実行し、
         1試合分の情報を辞書としてまとめてリストで返す。
         """
         results = []
-        i = 0
-        pbar = tqdm(total=match_count, desc="試合情報抽出")
-
-        while i < len(screens) - 1:
-            # マッチンググループの収集
-            matching_frames = []
-            while i < len(screens) and screens[i]["type"] == "matching":
-                matching_frames.append(screens[i])
-                i += 1
-
-            # 次がリザルト画面か判定
-            if i < len(screens) and screens[i]["type"] in ("result_win", "result_lose") and matching_frames:
-                match_info = self._extract_single_match(matching_frames, screens[i])
-                if match_info:
-                    results.append(match_info)
-                i += 1
-                pbar.update(1)
-            else:
-                i += 1
-
-        pbar.close()
+        for match in tqdm(matches, desc="試合情報抽出"):
+            match_info = self._extract_single_match(match["matching_frames"], match["result"])
+            if match_info:
+                results.append(match_info)
         return results
 
     def _extract_single_match(self, matching_frames: list[dict], result_screen: dict) -> dict | None:

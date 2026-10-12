@@ -75,6 +75,32 @@ python main.py --input data/video.mp4 --with-ocr
 
 > **注意**: OCR精度は保証されません。プレイヤー名・機体名の誤認識が発生することがあります。
 
+### 試合開始の判定のしかた
+
+- VS 画面は、実際の VS 画面から作った見本（`templates/vs.png`）と、ロゴの形の部分だけを比べるマスク（`templates/vs_mask.png`）で判定します。背景は試合ごとに違うため、比べません。
+- VS ロゴとの類似度が `vs_threshold` 以上のコマが `vs_min_frames` コマ以上続く区間を VS 画面とみなし、そのあと次の VS 画面までにリザルト画面があれば 1 試合と数えます。
+- 試合開始の時刻は、類似度が `vs_start_threshold` 以上のコマ（ロゴが飛び込んでくる途中のコマ）までさかのぼった時刻です。
+
+### 精度の確認
+
+正しいタイムスタンプの CSV（`match_number,start_time`）と比べて、試合数と時刻の違いを表示します。
+
+```bash
+# ファイルどうしを比べる
+python -m tools.evaluate_timestamps --expected 正解.csv --actual output/results/timestamps_video.csv
+
+# ディレクトリを渡すと、同じ名前の timestamps_{動画名}.csv どうしを比べる
+python -m tools.evaluate_timestamps --expected 正解のディレクトリ --actual output/results
+```
+
+### VS 画面の見本を作り直す
+
+ゲームの更新で VS 画面の見た目が変わったときは、動画とその動画の正しいタイムスタンプから見本とマスクを作り直します（720p 以上の動画がおすすめ）。
+
+```bash
+python -m tools.build_vs_template --input data/video.mp4 --timestamps 正解.csv
+```
+
 ---
 
 ## GitHub Actions による自動解析
@@ -110,8 +136,8 @@ exvs2ib-replay-parser/
 │   ├── processing/                  # 試合結果抽出
 │   ├── ocr/                         # OCR処理（実験的）
 │   └── util/                        # キャッシュ・I/O・画像処理
-├── templates/                       # テンプレートマッチング用画像（vs/win/lose）
-└── tools/                           # デバッグ・可視化ツール
+├── templates/                       # テンプレートマッチング用画像（vs/vs_mask/win/lose）
+└── tools/                           # デバッグ・可視化・精度確認・見本作成のツール
 ```
 
 ---

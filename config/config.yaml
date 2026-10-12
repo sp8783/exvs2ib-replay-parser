@@ -10,10 +10,16 @@ ocr:
 
 # テンプレート画像パス
 template:
-  vs: templates/vs.png
+  vs: templates/vs.png            # 実際の VS 画面から作った見本（tools/build_vs_template.py で作る）
+  vs_mask: templates/vs_mask.png  # VS の見本のうち比べる部分（白）。背景など毎回変わる部分は黒
   win: templates/win.png
   lose: templates/lose.png
-  threshold: 0.3     # テンプレートマッチングの閾値
+  threshold: 0.3     # テンプレートマッチングの閾値（WIN・LOSE）
+  vs_threshold: 0.8        # VS ロゴとの類似度がこの値以上のコマを VS 画面とみなす
+  vs_start_threshold: 0.65 # 試合開始は、類似度がこの値以上のコマまでさかのぼる（ロゴが飛び込んでくる途中のコマ）
+  vs_min_frames: 2         # vs_threshold 以上のコマがこの数より少なく続く区間は VS 画面とみなさない
+  vs_base_size: [1280, 720] # VS の判定では、フレームをこの大きさにそろえてから比べる
+  vs_search_margin: 16     # VS の判定で、ROI の周りをずらして探す幅（px、vs_base_size 基準）
 
 # 画面判定用ROI（割合指定）
 roi:

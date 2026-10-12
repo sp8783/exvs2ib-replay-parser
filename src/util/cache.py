@@ -11,7 +11,8 @@ class CacheManager:
         self.cache_dir = cache_dir
         self.video_basename = video_basename
         self.frames_cache_file = os.path.join(cache_dir, f"frame_cache_{video_basename}.pkl")
-        self.screens_cache_file = os.path.join(cache_dir, f"screen_cache_{video_basename}.pkl")
+        # 画面判定の結果の形が変わったら番号を上げ、古いキャッシュを使わないようにする
+        self.screens_cache_file = os.path.join(cache_dir, f"screen_cache_v2_{video_basename}.pkl")
         ensure_dir(cache_dir)
 
     def has_frames_cache(self) -> bool:

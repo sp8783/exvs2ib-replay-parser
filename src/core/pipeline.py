@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from src.core.config import Config
+from src.processing.match_detector import detect_matches
 from src.processing.match_extractor import MatchExtractor
 from src.util.io import ensure_dir, save_dataframe_csv, save_screen_log
 from src.util.cache import CacheManager
@@ -29,6 +30,8 @@ class Pipeline:
         # 各種マネージャー・プロセッサーの初期化
         self.cache_manager = CacheManager(self.cache_dir, self.video_basename)
         self.frame_interval = self.config.get("video", "frame_interval")
+        self.vs_threshold = self.config.get("template", "vs_threshold", default=0.8)
+        self.vs_min_frames = self.config.get("template", "vs_min_frames", default=2)
         if self.with_ocr:
             self.match_extractor = MatchExtractor(self.frame_interval, self.config)
 
@@ -46,15 +49,18 @@ class Pipeline:
         パイプライン全体を実行する。
         """
         # 1. フレーム抽出＋画面判定（統合フロー、キャッシュ対応）
-        screens, match_count = self._extract_and_classify_with_cache()
+        screens, _ = self._extract_and_classify_with_cache()
+
+        # 2. VS 画面 → リザルト画面の並びから試合を検出
+        matches = detect_matches(screens, self.vs_threshold, self.vs_min_frames)
 
         if self.with_ocr:
             # 試合結果抽出（実験的）
-            results = self.match_extractor.extract_match_results(screens, match_count)
+            results = self.match_extractor.extract_match_results(matches)
             self._save_results_to_csv(results)
         else:
             # タイムスタンプのみ出力（デフォルト）
-            timestamps = self._extract_timestamps(screens)
+            timestamps = self._extract_timestamps(matches)
             self._save_timestamps_to_csv(timestamps)
 
     def _extract_and_classify_with_cache(self) -> tuple:
@@ -75,36 +81,17 @@ class Pipeline:
         self.cache_manager.save_screens_cache(screens, match_count)
         return screens, match_count
 
-    def _extract_timestamps(self, screens: list[dict]) -> list[dict]:
+    def _extract_timestamps(self, matches: list[dict]) -> list[dict]:
         """
-        画面判定結果から matching → result の遷移を検出し、
-        各試合の最初の matching フレームのタイムスタンプを返す。
+        検出した試合ごとに、最初の VS 画面のコマのタイムスタンプを返す。
         """
-        timestamps = []
-        match_number = 0
-        i = 0
-
-        while i < len(screens):
-            # マッチンググループの先頭を記録
-            if screens[i]["type"] == "matching":
-                first_matching_path = screens[i]["path"]
-                # マッチングフレームをスキップ
-                while i < len(screens) and screens[i]["type"] == "matching":
-                    i += 1
-                # 次がリザルト画面なら1試合として記録
-                if i < len(screens) and screens[i]["type"] in ("result_win", "result_lose"):
-                    match_number += 1
-                    frame_name = os.path.basename(first_matching_path)
-                    start_time = calculate_timestamp(frame_name, self.frame_interval)
-                    timestamps.append({
-                        "match_number": match_number,
-                        "start_time": start_time,
-                    })
-                    i += 1
-            else:
-                i += 1
-
-        return timestamps
+        return [
+            {
+                "match_number": match_number,
+                "start_time": calculate_timestamp(os.path.basename(match["matching_frames"][0]["path"]), self.frame_interval),
+            }
+            for match_number, match in enumerate(matches, 1)
+        ]
 
     def _save_timestamps_to_csv(self, timestamps: list[dict]) -> None:
         """

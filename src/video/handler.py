@@ -101,13 +101,13 @@ def extract_and_classify_frames(
             if not ret:
                 break
 
-            screen_type = classifier.classify(frame)
+            screen_type, vs_score = classifier.classify(frame)
             frame_path = os.path.join(output_dir, f"frame_{idx:05d}.png")
-            log_rows.append({"frame": f"frame_{idx:05d}.png", "screen_type": screen_type})
+            log_rows.append({"frame": f"frame_{idx:05d}.png", "screen_type": screen_type, "vs_score": round(vs_score, 3)})
 
             if screen_type in ("matching", "result_win", "result_lose"):
                 cv2.imwrite(frame_path, frame)
-                screens.append({"type": screen_type, "path": frame_path})
+                screens.append({"type": screen_type, "path": frame_path, "index": idx, "vs_score": vs_score})
                 if prev_type == "matching" and screen_type in ("result_win", "result_lose"):
                     match_count += 1
                 prev_type = screen_type
