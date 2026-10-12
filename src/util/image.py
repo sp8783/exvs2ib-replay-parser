@@ -47,3 +47,16 @@ def roi_ratio_to_absolute(img: np.ndarray, roi_ratio: list | tuple) -> tuple[int
     x2 = int(w * roi_ratio[2])
     y2 = int(h * roi_ratio[3])
     return (x1, y1, x2, y2)
+
+
+def crop_at_base_size(img: np.ndarray, roi_ratio: list | tuple, base_size: tuple[int, int], margin: int = 0) -> np.ndarray:
+    """
+    画像を基準の大きさ（base_size）にそろえたときのROI（周りに margin px 広げる）を切り出して返す関数。
+    画像全体ではなく、ROIだけを基準の大きさに拡大・縮小する。
+    """
+    base_w, base_h = base_size
+    x1, y1, x2, y2 = (int(base_w * roi_ratio[0]) - margin, int(base_h * roi_ratio[1]) - margin,
+                      int(base_w * roi_ratio[2]) + margin, int(base_h * roi_ratio[3]) + margin)
+    h, w = img.shape[:2]
+    region = img[round(y1 * h / base_h):round(y2 * h / base_h), round(x1 * w / base_w):round(x2 * w / base_w)]
+    return cv2.resize(region, (x2 - x1, y2 - y1), interpolation=cv2.INTER_LINEAR)
